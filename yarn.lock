@@ -1046,7 +1046,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@templates/web@workspace:packages/templates/web"
   dependencies:
-    "@eslint/js": "npm:^10.0.1"
     "@tailwindcss/vite": "npm:^4.3.3"
     "@tanstack/react-form": "npm:^1.33.5"
     "@tanstack/react-query": "npm:^5.102.0"
@@ -1061,7 +1060,6 @@ __metadata:
     "@vitejs/plugin-react": "npm:^6.0.4"
     apexcharts: "npm:^7.4.0"
     eslint: "npm:^10.9.0"
-    eslint-config-prettier: "npm:^10.1.8"
     eslint-import-resolver-typescript: "npm:^4.4.5"
     eslint-plugin-boundaries: "npm:^7.2.0"
     eslint-plugin-react-hooks: "npm:^7.1.1"
@@ -3965,6 +3963,13 @@ __metadata:
 "soldev@workspace:.":
   version: 0.0.0-use.local
   resolution: "soldev@workspace:."
+  dependencies:
+    "@eslint/js": "npm:^10.0.1"
+    eslint: "npm:^10.9.0"
+    eslint-config-prettier: "npm:^10.1.8"
+    prettier: "npm:^3.9.6"
+    typescript: "npm:~6.0.2"
+    typescript-eslint: "npm:^8.67.0"
   languageName: unknown
   linkType: soft
 

@@ -1,15 +1,16 @@
-import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
-import prettier from 'eslint-config-prettier'
 import boundaries from 'eslint-plugin-boundaries'
+import base from '../../../eslint.config.base.js'
+
+const projectRoot = import.meta.dirname
 
 export default tseslint.config(
-  { ignores: ['dist', 'public/mockServiceWorker.js'] },
+  ...base,
+  { ignores: ['public/mockServiceWorker.js'] },
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2020,
@@ -21,6 +22,7 @@ export default tseslint.config(
       boundaries,
     },
     settings: {
+      'boundaries/root-path': projectRoot,
       'boundaries/elements': [
         { type: 'app', pattern: 'src/app/**' },
         { type: 'shared', pattern: 'src/shared/**' },
@@ -28,7 +30,7 @@ export default tseslint.config(
       ],
       'import/resolver': {
         typescript: {
-          project: './tsconfig.app.json',
+          project: `${projectRoot}/tsconfig.app.json`,
         },
       },
     },
@@ -69,5 +71,4 @@ export default tseslint.config(
       ],
     },
   },
-  prettier,
 )

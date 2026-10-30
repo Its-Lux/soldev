@@ -1,0 +1,34 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { {{camelCase name}}Api } from '../api/{{name}}Api'
+import { {{camelCase name}}Keys } from './queryKeys'
+{{#if (eq mutationName "update")}}
+import type { {{pascalCase name}} } from '../types'
+
+interface Update{{pascalCase name}}Variables {
+  id: string
+  input: Partial<{{pascalCase name}}>
+}
+
+export function use{{pascalCase mutationName}}{{pascalCase name}}() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (variables: Update{{pascalCase name}}Variables) =>
+      {{camelCase name}}Api.update(variables.id, variables.input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: {{camelCase name}}Keys.lists() })
+    },
+  })
+}
+{{else}}
+export function use{{pascalCase mutationName}}{{pascalCase name}}() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: {{camelCase name}}Api.{{camelCase mutationName}},
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: {{camelCase name}}Keys.lists() })
+    },
+  })
+}
+{{/if}}

@@ -1,0 +1,23 @@
+{
+  "name": "soldev",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "workspaces": [
+    "packages/libs/*",
+    "packages/services/*",
+    "packages/web/*",
+    "packages/templates/*"
+  ],
+  "packageManager": "yarn@4.7.0",
+  "engines": {
+    "node": ">=24.18.0"
+  },
+  "scripts": {
+    "run:template": "yarn workspace @templates/web dev",
+    "build:template": "yarn workspace @templates/web build",
+    "lint:template": "yarn workspace @templates/web lint",
+    "typecheck:template": "yarn workspace @templates/web typecheck"
+  }
+}

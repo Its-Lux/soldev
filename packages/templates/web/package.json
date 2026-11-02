@@ -13,13 +13,7 @@
     "generate:adr": "plop adr",
     "generate:hook": "plop hook",
     "generate:component": "plop component",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "docker:build": "docker build -t soldev-ui .",
-    "docker:run": "docker run -p 8080:80 soldev-ui",
-    "docker:run:detached": "docker run -d -p 8080:80 --name soldev-ui soldev-ui",
-    "docker:stop": "docker stop soldev-ui",
-    "docker:clean": "docker rm -f soldev-ui 2>/dev/null; docker rmi soldev-ui 2>/dev/null || true",
-    "docker:rebuild": "yarn docker:clean && yarn docker:build && yarn docker:run:detached"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "engines": {
     "node": ">=24.18.0"

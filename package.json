@@ -19,7 +19,10 @@
     "run:template": "yarn workspace @templates/web dev",
     "build:template": "yarn workspace @templates/web build",
     "lint:template": "yarn workspace @templates/web lint",
-    "typecheck:template": "yarn workspace @templates/web typecheck"
+    "typecheck:template": "yarn workspace @templates/web typecheck",
+    "docker:template:build": "docker build -f hosting/docker/_web-template/Dockerfile --build-arg APP_DIR=packages/templates/web --build-arg APP_NAME=@templates/web -t soldev-web-template .",
+    "docker:template:run": "docker run --rm -p 8080:80 soldev-web-template",
+    "docker:template:verify": "APP_DIR=packages/templates/web APP_NAME=@templates/web bash hosting/docker/_web-template/verify-docker.sh"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

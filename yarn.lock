@@ -3963,6 +3963,7 @@ __metadata:
   resolution: "soldev@workspace:."
   dependencies:
     "@eslint/js": "npm:^10.0.1"
+    "@types/node": "npm:^24.13.3"
     eslint: "npm:^10.9.0"
     eslint-config-prettier: "npm:^10.1.8"
     husky: "npm:^9.1.7"

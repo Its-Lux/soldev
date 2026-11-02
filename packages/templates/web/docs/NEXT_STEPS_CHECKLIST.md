@@ -20,7 +20,7 @@ shaped like soltrak-rewrite. Done and verified:
       `lint-staged` block (closest config wins)
 - [x] Docker built from the repo root: one Dockerfile in
       `hosting/docker/_web-template` with `__APP__` tokens, `yarn workspaces
-    focus`, mock worker removed when mocks are off. 10 of 10 verify checks
+  focus`, mock worker removed when mocks are off. 10 of 10 verify checks
       for both template and client, 20 MB images
 - [x] `sites` removed; `guide` and the template docs marked template-only
       (`template.json` plus `template-only:start`/`end` markers)
@@ -34,14 +34,15 @@ shaped like soltrak-rewrite. Done and verified:
 Opened by the restructure:
 
 - [ ] Merge `chore/move-to-templates` into `main` through a pull request
-- [ ] Decision log rows in `BUILD_GUIDE.md` for the restructure, and a
+- [x] Decision log rows in `BUILD_GUIDE.md` for the restructure, and a
       repo-wide ADR for the monorepo layout in the root `docs/adr/`
-- [ ] `setupApi()` appears not to be called in `main.tsx` (check with a grep
-      for `setupApi`). Harmless while every hook is commented out, but a
-      project filling in `prepareRequest` or `unwrapResponse` would see no
-      effect
-- [ ] Wrap the `docs/examples` pointer in `NEW_DEVELOPER_GUIDE.md` in
-      template-only markers (the client's copy needs the line removed by hand)
+- [x] `setupApi()` was never called. Now called once at startup in `main.tsx`
+      (template and client), verified with a temporary `prepareRequest` probe
+- [x] The `todos` mock handlers used a hardcoded `http://localhost:3000/api`,
+      so with no `.env` (a fresh clone) every request went unhandled. They now
+      build on `env.API_ADDRESS`, like `handlers.hbs`
+- [x] Template-specific lines in `NEW_DEVELOPER_GUIDE.md` and the ADR index
+      wrapped in template-only markers; the client's copies regenerated
 - [ ] The `component` generator writes `shared/ui/<Name>.tsx` as a flat file,
       while the convention is a folder per primitive with an `index.ts`
 - [ ] The "Soldev UI" brand is hardcoded in `Layout.tsx` (navbar and footer),
@@ -77,10 +78,10 @@ where they overlap. Work through it in order, confirming each step.
       their route files, nav entries and any handler registrations
 - [x] Bring `README.md` and `NEW_DEVELOPER_GUIDE.md` in line with reality
       (both still describe tests and CI as present)
-- [ ] ADRs. 0001 to 0012 now exist with kebab-case names. Still to check:
-      0008's filename (`body-generator-suite` looks like a slip for
-      `generator-suite`), whether 0011 (`routing-and-boundaries`) duplicates
-      0005, and that the `docs/adr/README.md` index lists 0006 to 0012
+- [ ] ADRs. 0001 to 0012 exist and the index lists all of them; 0005's
+      heading number and 0008's name are fixed. Still to do: decide whether
+      the six ADRs marked Proposed (0005 to 0009 and 0011) should be
+      Accepted, and whether 0011 duplicates 0005
 - [x] Re-verify the Docker build with everything added since it last ran.
       Done in the monorepo restructure: `verify-docker.sh` passes 10 of 10 for
       the template and the client, and `.gitattributes` keeps `*.sh` as LF
@@ -90,7 +91,7 @@ where they overlap. Work through it in order, confirming each step.
       script confirms MSW and `mockServiceWorker.js` are absent from the
       production image
 - [ ] Remaining from the mock-layer fix: add `readonly VITE_ENABLE_MOCKS?:
-    string` to `vite-env.d.ts` if missing, document the flag in
+  string` to `vite-env.d.ts` if missing, document the flag in
       `.env.example`, and optionally add demo build scripts
 - [ ] `env` module: replace `shared/config/env.ts` (the owner's existing one)
       and `shared/lib/api/config.ts`, so the API client's default address
@@ -107,8 +108,8 @@ where they overlap. Work through it in order, confirming each step.
 - [x] Shared API client in `shared/lib` with one configuration point
       (`configureApi`) for request preparation, response unwrapping, error
       extraction and 401 and 403 handling. Neutral defaults: bare JSON, no
-      auth. Working: `todos` runs on it. Not yet confirmed: that `setupApi()`
-      is called in `main.tsx` (see the monorepo section above)
+      auth. Working: `todos` runs on it, and `setupApi()` is called once at
+      startup in `main.tsx`
 - [ ] Example adapter for the existing system (token appended to the body,
       the real response shapes, session expiry) in `docs/examples/`, outside
       `src/`. Updated now that `withToken` is known. Awaiting the updated file

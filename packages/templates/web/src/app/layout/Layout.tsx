@@ -3,7 +3,6 @@ import { Footer, ThemeToggle } from '@/shared/ui'
 import { ResponsiveNavbar, type MobileNavVariant } from '@/shared/ui/layout'
 import { useFullBleed } from '@/app/router/useFullBleed'
 // plop:nav-icon-import
-import { FaMapLocation } from 'react-icons/fa6'
 import { FaHome, FaBook } from 'react-icons/fa'
 
 // 'drawer' = hamburger and slide-in menu, 'bottom' = fixed bottom bar
@@ -22,7 +21,6 @@ export function Layout() {
     { label: 'Home', href: '/todos', icon: FaHome, isActive: pathname === '/todos' },
     // NOTE: Do not remove the following line. It is used by plop to add new navigation links.
     // plop:nav-link
-    { label: 'Sites', href: '/sites', icon: FaMapLocation, isActive: pathname === '/sites' },
     ...(import.meta.env.DEV
       ? [{ label: 'Guide', href: '/guide', icon: FaBook, isActive: pathname === '/guide' }]
       : []),

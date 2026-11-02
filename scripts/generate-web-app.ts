@@ -30,23 +30,28 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { basename, extname, join, relative, resolve, sep } from 'node:path'
+import { basename, extname, join, relative, sep } from 'node:path'
 import { parseArgs } from 'node:util'
+import {
+  DOCKER_DIR,
+  NAME_PATTERN,
+  PACKAGE_SCOPE,
+  RESERVED_NAMES,
+  ROOT,
+  ROOT_PACKAGE_JSON,
+  WEB_DIR,
+  packageNameFor,
+  rootScriptsFor,
+  type PackageJson,
+} from './lib/web-app.ts'
 
-const ROOT = resolve(import.meta.dirname, '..')
 const APP_TEMPLATE_DIR = join(ROOT, 'packages', 'templates', 'web')
 const DOCKER_TEMPLATE_DIR = join(ROOT, 'hosting', 'docker', '_web-template')
-const WEB_DIR = join(ROOT, 'packages', 'web')
-const DOCKER_DIR = join(ROOT, 'hosting', 'docker')
-const ROOT_PACKAGE_JSON = join(ROOT, 'package.json')
 
-const PACKAGE_SCOPE = '@web'
 const APP_TOKEN = '__APP__'
 const MANIFEST = 'template.json'
 const MARKER_START = 'template-only:start'
 const MARKER_END = 'template-only:end'
-const NAME_PATTERN = /^[a-z][a-z0-9-]*[a-z0-9]$/
-const RESERVED_NAMES = new Set(['api', 'templates', 'template', 'web'])
 
 /** Never copied from the template: build output, installs, local secrets. */
 const EXCLUDED_NAMES = new Set(['node_modules', 'dist', 'coverage', '.vite', '.env', '.env.local'])
@@ -76,12 +81,6 @@ interface Options {
   name: string
   port: number | undefined
   title: string
-}
-
-interface PackageJson {
-  name?: string
-  scripts?: Record<string, string>
-  [key: string]: unknown
 }
 
 interface Manifest {
@@ -289,7 +288,7 @@ function patchPackageJson(appDir: string, options: Options): string[] {
   const path = join(appDir, 'package.json')
   const { data: pkg, eol } = readJson<PackageJson>(path)
 
-  pkg.name = `${PACKAGE_SCOPE}/${options.name}`
+  pkg.name = packageNameFor(options.name)
 
   if (options.port !== undefined) {
     const dev = pkg.scripts?.dev
@@ -354,17 +353,8 @@ function copyDockerTemplate(dockerDir: string, name: string): string[] {
 function addRootScripts(name: string): string[] {
   const warnings: string[] = []
   const { data: pkg, eol } = readJson<PackageJson>(ROOT_PACKAGE_JSON)
-  const workspace = `${PACKAGE_SCOPE}/${name}`
-  const wanted: Record<string, string> = {
-    [`run:${name}`]: `yarn workspace ${workspace} dev`,
-    [`build:${name}`]: `yarn workspace ${workspace} build`,
-    [`lint:${name}`]: `yarn workspace ${workspace} lint`,
-    [`typecheck:${name}`]: `yarn workspace ${workspace} typecheck`,
-    [`docker:${name}:build`]: `docker build -f hosting/docker/${name}/Dockerfile -t soldev-${name} .`,
-    [`docker:${name}:verify`]: `bash hosting/docker/${name}/verify-docker.sh`,
-  }
   const scripts = pkg.scripts ?? {}
-  for (const [key, value] of Object.entries(wanted)) {
+  for (const [key, value] of Object.entries(rootScriptsFor(name))) {
     if (key in scripts) {
       warnings.push(`Root script "${key}" already exists; left unchanged.`)
     } else {

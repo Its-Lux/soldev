@@ -1,0 +1,30 @@
+{{#if (eq mutationName "create")}}
+
+  http.post(`${BASE_URL}/create`, async ({ request }) => {
+    const body = (await request.json()) as Partial<{{pascalCase name}}>
+    const item = { ...body, id: crypto.randomUUID() } as {{pascalCase name}}
+    items.push(item)
+    return HttpResponse.json(item, { status: 201 })
+  }),
+{{/if}}
+{{#if (eq mutationName "update")}}
+
+  http.post(`${BASE_URL}/update`, async ({ request }) => {
+    const { id, ...changes } = (await request.json()) as Partial<{{pascalCase name}}> & { id: string }
+    const item = items.find((i) => i.id === id)
+    if (!item) return new HttpResponse(null, { status: 404 })
+    Object.assign(item, changes)
+    return HttpResponse.json(item)
+  }),
+{{/if}}
+{{#if (eq mutationName "delete")}}
+
+  http.post(`${BASE_URL}/delete`, async ({ request }) => {
+    const { id } = (await request.json()) as { id: string }
+    const index = items.findIndex((i) => i.id === id)
+    if (index !== -1) items.splice(index, 1)
+    return new HttpResponse(null, { status: 204 })
+  }),
+{{/if}}
+  // plop:handler
+]

@@ -24,7 +24,13 @@
     "typecheck:template": "yarn workspace @templates/web typecheck",
     "docker:template:build": "docker build -f hosting/docker/_web-template/Dockerfile --build-arg APP_DIR=packages/templates/web --build-arg APP_NAME=@templates/web -t soldev-web-template .",
     "docker:template:run": "docker run --rm -p 8080:80 soldev-web-template",
-    "docker:template:verify": "APP_DIR=packages/templates/web APP_NAME=@templates/web bash hosting/docker/_web-template/verify-docker.sh"
+    "docker:template:verify": "APP_DIR=packages/templates/web APP_NAME=@templates/web bash hosting/docker/_web-template/verify-docker.sh",
+    "run:client": "yarn workspace @web/client dev",
+    "build:client": "yarn workspace @web/client build",
+    "lint:client": "yarn workspace @web/client lint",
+    "typecheck:client": "yarn workspace @web/client typecheck",
+    "docker:client:build": "docker build -f hosting/docker/client/Dockerfile -t soldev-client .",
+    "docker:client:verify": "bash hosting/docker/client/verify-docker.sh"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

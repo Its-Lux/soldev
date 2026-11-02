@@ -1,0 +1,43 @@
+@import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-muted: #64748b;
+  --color-muted-foreground: #94a3b8;
+  --color-border: #e2e8f0;
+  --color-surface: #f8fafc;
+  --color-accent: #2563eb;
+  --color-accent-foreground: #ffffff;
+}
+
+.dark {
+  --color-background: #0f172a;
+  --color-foreground: #f1f5f9;
+  --color-muted: #1e293b;
+  --color-muted-foreground: #94a3b8;
+  --color-border: #1e293b;
+  --color-surface: #1e293b;
+  --color-accent: #3b82f6;
+  --color-accent-foreground: #f8fafc;
+}
+
+/*
+ * One line of a code block, numbered with a CSS counter. The number is
+ * generated content, so copying a snippet copies only the code.
+ */
+@utility code-line {
+  display: block;
+  padding-inline-end: 1rem;
+  counter-increment: line;
+  &::before {
+    content: counter(line);
+    display: inline-block;
+    width: 3.5rem;
+    padding-inline-end: 1rem;
+    text-align: right;
+    color: var(--color-muted-foreground);
+    user-select: none;
+  }
+}

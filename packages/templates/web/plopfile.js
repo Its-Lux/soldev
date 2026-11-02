@@ -1,6 +1,13 @@
 import fs from 'node:fs'
+import path from 'node:path'
 
 export default function (plop) {
+  // Plop resolves action paths from this file's folder, but plain fs calls
+  // resolve from wherever the command was started. Anchor every fs path here
+  // so the generators behave the same from the package, the repo root or an IDE.
+  const fromHere = (...parts) => path.join(plop.getPlopfilePath(), ...parts)
+  const pascalCase = plop.getHelper('pascalCase')
+
   plop.setHelper('includes', (array, value) => array.includes(value))
   plop.setHelper('eq', (a, b) => a === b)
 
@@ -27,8 +34,8 @@ export default function (plop) {
       when: (answers) => answers.navPlacement === 'existingGroup',
       validate: (input) => {
         const layoutPath = 'src/app/layout/Layout.tsx'
-        if (!fs.existsSync(layoutPath)) return `Could not find ${layoutPath}.`
-        const content = fs.readFileSync(layoutPath, 'utf-8')
+        if (!fs.existsSync(fromHere(layoutPath))) return `Could not find ${layoutPath}.`
+        const content = fs.readFileSync(fromHere(layoutPath), 'utf-8')
         const marker = `// plop:nav-group:${input}`
         return content.includes(marker)
           ? true
@@ -42,8 +49,8 @@ export default function (plop) {
       when: (answers) => answers.navPlacement === 'newGroup',
       validate: (input) => {
         const layoutPath = 'src/app/layout/Layout.tsx'
-        if (fs.existsSync(layoutPath)) {
-          const content = fs.readFileSync(layoutPath, 'utf-8')
+        if (fs.existsSync(fromHere(layoutPath))) {
+          const content = fs.readFileSync(fromHere(layoutPath), 'utf-8')
           if (content.includes(`// plop:nav-group:${input}`)) {
             return `A group "${input}" already exists. Pick a different slug or choose "Add to an existing dropdown group".`
           }
@@ -260,11 +267,11 @@ export default function (plop) {
         name: 'name',
         message: 'Existing feature name (lowercase, e.g. "orders"):',
         validate: (input) => {
-          const featureExists = fs.existsSync(`src/features/${input}/index.ts`)
+          const featureExists = fs.existsSync(fromHere(`src/features/${input}/index.ts`))
           if (!featureExists) {
             return `No feature found at src/features/${input}/index.ts. Check the name, or use the "feature" generator to create it first.`
           }
-          const routeExists = fs.existsSync(`src/app/router/routes/${input}Route.ts`)
+          const routeExists = fs.existsSync(fromHere(`src/app/router/routes/${input}Route.ts`))
           if (routeExists) {
             return `src/app/router/routes/${input}Route.ts already exists, so this feature is already routed.`
           }
@@ -307,7 +314,7 @@ export default function (plop) {
     ],
     actions: [
       (answers) => {
-        const adrDir = 'docs/adr'
+        const adrDir = fromHere('docs/adr')
         if (!fs.existsSync(adrDir)) {
           fs.mkdirSync(adrDir, { recursive: true })
         }
@@ -339,7 +346,7 @@ export default function (plop) {
         name: 'name',
         message: 'Existing feature name (lowercase, e.g. "orders"):',
         validate: (input) => {
-          const exists = fs.existsSync(`src/features/${input}/index.ts`)
+          const exists = fs.existsSync(fromHere(`src/features/${input}/index.ts`))
           return exists || `No feature found at src/features/${input}/index.ts.`
         },
       },
@@ -351,8 +358,9 @@ export default function (plop) {
       },
     ],
     actions: (answers) => {
-      const hookPath = `src/features/${answers.name}/hooks/use${answers.mutationName[0].toUpperCase()}${answers.mutationName.slice(1)}${answers.name[0].toUpperCase()}${answers.name.slice(1)}.ts`
-      if (fs.existsSync(hookPath)) {
+      // Same helper as the add action below, so the check and the file always agree.
+      const hookPath = `src/features/${answers.name}/hooks/use${pascalCase(answers.mutationName)}${pascalCase(answers.name)}.ts`
+      if (fs.existsSync(fromHere(hookPath))) {
         throw new Error(`${hookPath} already exists.`)
       }
 
@@ -361,12 +369,15 @@ export default function (plop) {
       const apiAnchor = /  \/\/ plop:mutation\r?\n}/
       const handlersAnchor = /  \/\/ plop:handler\r?\n\]/
       const missing = []
-      if (!fs.existsSync(apiPath) || !apiAnchor.test(fs.readFileSync(apiPath, 'utf-8'))) {
+      if (
+        !fs.existsSync(fromHere(apiPath)) ||
+        !apiAnchor.test(fs.readFileSync(fromHere(apiPath), 'utf-8'))
+      ) {
         missing.push(`${apiPath} (needs "  // plop:mutation" before its closing brace)`)
       }
       if (
-        !fs.existsSync(handlersPath) ||
-        !handlersAnchor.test(fs.readFileSync(handlersPath, 'utf-8'))
+        !fs.existsSync(fromHere(handlersPath)) ||
+        !handlersAnchor.test(fs.readFileSync(fromHere(handlersPath), 'utf-8'))
       ) {
         missing.push(`${handlersPath} (needs "  // plop:handler" before its closing bracket)`)
       }
@@ -415,7 +426,7 @@ export default function (plop) {
         message: 'Which feature (lowercase, e.g. "orders"):',
         when: (answers) => answers.location === 'feature',
         validate: (input) => {
-          const exists = fs.existsSync(`src/features/${input}/index.ts`)
+          const exists = fs.existsSync(fromHere(`src/features/${input}/index.ts`))
           return exists || `No feature found at src/features/${input}/index.ts.`
         },
       },
@@ -433,7 +444,7 @@ export default function (plop) {
           ? `src/features/${answers.featureName}/components`
           : 'src/shared/ui'
       const filePath = `${targetDir}/${answers.componentName}.tsx`
-      if (fs.existsSync(filePath)) {
+      if (fs.existsSync(fromHere(filePath))) {
         throw new Error(`${filePath} already exists.`)
       }
       return [

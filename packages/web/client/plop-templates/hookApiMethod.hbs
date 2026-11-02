@@ -1,0 +1,16 @@
+{{#if (eq mutationName "create")}}
+
+  create: (input: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}> =>
+    request<{{pascalCase name}}>({ path: route('create'), body: input }),
+{{/if}}
+{{#if (eq mutationName "update")}}
+
+  update: (id: string, input: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}> =>
+    request<{{pascalCase name}}>({ path: route('update'), body: { ...input, id } }),
+{{/if}}
+{{#if (eq mutationName "delete")}}
+
+  delete: (id: string): Promise<void> => request({ path: route('delete'), body: { id } }),
+{{/if}}
+  // plop:mutation
+}

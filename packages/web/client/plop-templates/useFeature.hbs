@@ -1,0 +1,10 @@
+import { useQuery } from '@tanstack/react-query'
+import { {{camelCase name}}Api } from '../api/{{name}}Api'
+import { {{camelCase name}}Keys } from './queryKeys'
+
+export function use{{pascalCase name}}() {
+  return useQuery({
+    queryKey: {{camelCase name}}Keys.lists(),
+    queryFn: {{camelCase name}}Api.getAll,
+  })
+}

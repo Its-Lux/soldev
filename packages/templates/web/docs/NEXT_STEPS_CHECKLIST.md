@@ -5,6 +5,58 @@ this to pick up where this conversation left off, in a new chat or project.
 Reference `docs/BUILD_GUIDE.md` and `docs/adr/` for the reasoning behind
 anything here that needs more context.
 
+## Monorepo restructure (done, 2026-11-02)
+
+The template now lives in `packages/templates/web` inside a Yarn 4 monorepo
+shaped like soltrak-rewrite. Done and verified:
+
+- [x] Moved into `packages/templates/web` with history preserved
+- [x] Root workspace on Yarn 4.7.0 (vendored binary, `nodeLinker: node-modules`);
+      scopes `@templates/web`, `@web/<app>`, `@libs/<lib>`
+- [x] LF line endings enforced by a root `.gitattributes`
+- [x] Root `tsconfig.base.json`, `eslint.config.base.js` and `.prettierrc`;
+      the template's ESLint config gives the same result from any folder
+- [x] Husky and lint-staged at the root; each package keeps its own
+      `lint-staged` block (closest config wins)
+- [x] Docker built from the repo root: one Dockerfile in
+      `hosting/docker/_web-template` with `__APP__` tokens, `yarn workspaces
+    focus`, mock worker removed when mocks are off. 10 of 10 verify checks
+      for both template and client, 20 MB images
+- [x] `sites` removed; `guide` and the template docs marked template-only
+      (`template.json` plus `template-only:start`/`end` markers)
+- [x] `yarn generate:web-app <name>` at the root: copies the template, strips
+      template-only content, fails and rolls back if code still refers to a
+      stripped path, sets up Docker and root scripts
+- [x] `packages/web/client` generated from the template and verified
+- [x] Plopfile `fs` paths anchored with `plop.getPlopfilePath()`
+- [x] Zod removed and recorded (ADR 0012)
+
+Opened by the restructure:
+
+- [ ] Merge `chore/move-to-templates` into `main` through a pull request
+- [ ] Decision log rows in `BUILD_GUIDE.md` for the restructure, and a
+      repo-wide ADR for the monorepo layout in the root `docs/adr/`
+- [ ] `setupApi()` appears not to be called in `main.tsx` (check with a grep
+      for `setupApi`). Harmless while every hook is commented out, but a
+      project filling in `prepareRequest` or `unwrapResponse` would see no
+      effect
+- [ ] Wrap the `docs/examples` pointer in `NEW_DEVELOPER_GUIDE.md` in
+      template-only markers (the client's copy needs the line removed by hand)
+- [ ] The `component` generator writes `shared/ui/<Name>.tsx` as a flat file,
+      while the convention is a folder per primitive with an `index.ts`
+- [ ] The "Soldev UI" brand is hardcoded in `Layout.tsx` (navbar and footer),
+      so every generated app shows it
+- [ ] Fixes made to the template after an app was generated must be copied
+      into that app by hand (the plopfile was the first case). Consider
+      shared packages before a second frontend exists: `packages/libs/ui`
+      (Tailwind v4 needs an `@source` line for it) and shared generators
+- [ ] `@libs/types`: shared, types-only request and response contracts for
+      the frontend and the API
+- [ ] Conventions to agree with the colleague who owns `libs/data` and
+      `web/api`: toolchain versions, scopes, Prettier and ESLint, the API
+      contract, line endings
+- [ ] `yarn explain peer-requirements` (Yarn reports YN0086 on install)
+
 ## Current roadmap: making the template foolproof
 
 This section is the live plan and takes precedence over older sections below
@@ -14,9 +66,10 @@ where they overlap. Work through it in order, confirming each step.
 
 - [ ] Automated tests and CI. Declined for now. Before this can return, a
       lighter setup needs designing. Seed idea: Vitest only, covering pure
-      logic (services, libs, zod schemas, the form builder's schema
-      functions), with no jsdom, no React Testing Library and no MSW node
-      server, run locally with `yarn test` and no pipeline.
+      logic (services, libs, the form builder's validation functions
+      `validateFormSchema` and `validateField`), with no jsdom, no React
+      Testing Library and no MSW node server, run locally with `yarn test`
+      and no pipeline.
 
 **Cleanup (do first, cheap and visible)**
 
@@ -24,29 +77,21 @@ where they overlap. Work through it in order, confirming each step.
       their route files, nav entries and any handler registrations
 - [x] Bring `README.md` and `NEW_DEVELOPER_GUIDE.md` in line with reality
       (both still describe tests and CI as present)
-- [ ] ADRs. Confirmed from the owner's listing: 0001 to 0005 are correctly
-      named (0005 already covers routing and boundaries), and 0006 and 0007
-      exist for the auth seams and POST-only decisions. Still to generate:
-      the generator suite, theme and charts, and the form builder, whose
-      bodies are in `housekeeping/adr/` and will become 0008 to 0010. Also
-      check that 0006's filename matches its content, and that the README
-      index lists 0006 to 0010
-- [ ] Re-verify the Docker build with everything added since it last ran.
-      `housekeeping/scripts/verify-docker.sh` delivered, its logic tested
-      against stand-ins for docker and curl only. Awaiting a real run, the
-      `Dockerfile` and `nginx.conf` for review, a `docker:verify` script in
-      `package.json`, and `*.sh text eol=lf` in `.gitattributes`
-- [ ] The Docker image runs the mock layer. Cause found: the
-      `import.meta.env.DEV` guard in `main.tsx` was commented out, so MSW
-      started in every build, and the build had no API address because
-      `.env` is not copied into the image. Fix delivered and verified on
-      real Vite 8 builds: `main.tsx` (mock when DEV, or when built with
-      `VITE_ENABLE_MOCKS=true`) and a `Dockerfile` taking `VITE_API_BASE_URL`
-      and `VITE_ENABLE_MOCKS` as build arguments. Awaiting the owner
-      replacing both, rebuilding, and running the verify script (and with
-      `DEMO=1` for a demo image). Also: add `readonly VITE_ENABLE_MOCKS?:
-    string` to `vite-env.d.ts`, document the flag in `.env.example`, and
-      optionally add `docker:build:demo` and `docker:run:demo` scripts
+- [ ] ADRs. 0001 to 0012 now exist with kebab-case names. Still to check:
+      0008's filename (`body-generator-suite` looks like a slip for
+      `generator-suite`), whether 0011 (`routing-and-boundaries`) duplicates
+      0005, and that the `docs/adr/README.md` index lists 0006 to 0012
+- [x] Re-verify the Docker build with everything added since it last ran.
+      Done in the monorepo restructure: `verify-docker.sh` passes 10 of 10 for
+      the template and the client, and `.gitattributes` keeps `*.sh` as LF
+- [x] The Docker image runs the mock layer. Fixed: `main.tsx` mocks only in
+      development or when built with `VITE_ENABLE_MOCKS=true`, the
+      `Dockerfile` takes `VITE_*` values as build arguments, and the verify
+      script confirms MSW and `mockServiceWorker.js` are absent from the
+      production image
+- [ ] Remaining from the mock-layer fix: add `readonly VITE_ENABLE_MOCKS?:
+    string` to `vite-env.d.ts` if missing, document the flag in
+      `.env.example`, and optionally add demo build scripts
 - [ ] `env` module: replace `shared/config/env.ts` (the owner's existing one)
       and `shared/lib/api/config.ts`, so the API client's default address
       comes from `env`. Check `shared/config/index.ts` exports `env`. The
@@ -63,7 +108,7 @@ where they overlap. Work through it in order, confirming each step.
       (`configureApi`) for request preparation, response unwrapping, error
       extraction and 401 and 403 handling. Neutral defaults: bare JSON, no
       auth. Working: `todos` runs on it. Not yet confirmed: that `setupApi()`
-      is called in `main.tsx`
+      is called in `main.tsx` (see the monorepo section above)
 - [ ] Example adapter for the existing system (token appended to the body,
       the real response shapes, session expiry) in `docs/examples/`, outside
       `src/`. Updated now that `withToken` is known. Awaiting the updated file
@@ -96,26 +141,24 @@ where they overlap. Work through it in order, confirming each step.
 - [ ] Missing base components: `Modal` (native dialog), `DropdownMenu`
       (compound, ARIA menu button) and `Radio` with `RadioGroup`. Delivered,
       awaiting a check in the browser
-- [ ] A `radio` field type for the form builder, using `RadioGroup`. It
-      touches the Zod-based builder, so wait for the Zod decision
+- [ ] A `radio` field type for the form builder, using `RadioGroup`. No
+      longer blocked: the builder is plain TypeScript now (ADR 0012), so this
+      is a new entry in `FIELD_TYPES`, a branch in `validateField` and a
+      registry entry
 
 **Generator follow-ups**
 
-- [ ] Make the hook generator tolerate CRLF. Every document, template and the
-      plopfile uploaded so far is CRLF while `.editorconfig` says LF, so the
-      hook generator's pattern very probably does nothing on this machine.
-      Confirmed with real Plop: on a CRLF feature the current generator
-      reports success, adds no method, and still creates a hook that
-      calls the missing one. Fixed block delivered as
-      `hook-generator-block.txt`, awaiting paste. Also settle line
-      endings across the repo
+- [x] Make the hook generator tolerate CRLF. Its anchor patterns accept
+      `\r?\n`, and line endings across the repo are now LF, enforced by
+      `.gitattributes`
 - [ ] Review the five nav templates and generate a test group to confirm
       the `existingGroup` path re-emits its anchor
 - [ ] Refresh the packaged skill. Rebuilt and validated as
       `vite-react-feature-sliced-builder.skill`: corrected the working-style rule
       about who creates files, rewrote the generator reference, and added
       references for the API client and for verifying deliveries. Awaiting
-      installation
+      installation. It also needs updating for the monorepo layout and the
+      Zod removal
 - [ ] Consider a generator for detail routes (`/name/$id`), which are
       still written by hand
 - [x] Rework to POST-only: `request()` default, the `todos` API, the mock
@@ -126,7 +169,8 @@ where they overlap. Work through it in order, confirming each step.
       update and delete handlers for the ticked mutations, and the hook
       generator patches the handlers file as well as `api.ts`, refusing to
       run if an anchor is missing. `handlers.hbs` is in the repo (confirmed by
-      paste). Still to confirm: the hook generator block, and a test run
+      paste). Still to confirm: a full test run of the feature and hook
+      generators on a throwaway feature
 - [ ] When porting the existing analytics API files, move their
       `transform...` functions into `services/` as pure functions
 
@@ -190,25 +234,21 @@ change. It is kept to inform the example adapter.
   reach the client as names, not as permissions
 - The envelope type is `{ status: { success, message? }, token?, user?,
 data? }`. Login returns `token` and `user` beside `status`, so a login
-  response needs its own schema
+  response needs its own handling in the adapter
 - Still unknown: the 401, 403 and general error response shapes, the values
   of `permissionType`, what `user.assets` holds, and what PERPROJECT means
   (read as: no blanket client access, access comes from asset roles)
 
 **Open decisions**
 
-- Zod or plain TypeScript for runtime validation. Undecided. It affects every
-  feature's `types/` and `api/`, the generators and, most of all, the form
-  builder, which uses Zod to build input validators and to validate a form
-  description that comes from the backend. A parser-agnostic API client would
-  keep the choice open per project
-  Measured with a grep for imports of Zod in `src`: five files today. They
-  are the `todos` types and API, the form builder's `types.ts` and
-  `buildFieldValuesSchema.ts`, and the API client (a type-only import). The
-  three generator templates use it too. The cost grows with every endpoint
-  added, so it is cheapest to decide before more features exist.
-  The owner is testing first and will decide in a few days. Make no Zod
-  changes until then
+- DECIDED AND DONE: Zod is removed from the system (ADR 0012, 2026-11-02).
+  Domain types are plain interfaces; runtime checks are opt-in through the
+  `parse` option of `request()`, which any function returning `T` or
+  throwing can fill, including a library's parse method if a project ever
+  wants one. The form builder validates by hand (`validateFormSchema`,
+  `parseFormSchema`, `validateField`), with `FIELD_TYPES` driving both the
+  `FieldType` union and the runtime check. Zod remains in the lockfile only
+  as a dependency of `eslint-plugin-react-hooks`
 - DECIDED AND DONE: POST-only is adopted and implemented (see the roadmap).
   The question was whether the template adopts POST-only as its convention.
   The owner says all
@@ -228,7 +268,7 @@ data? }`. Login returns `token` and `user` beside `status`, so a login
 
 - [ ] `schemas` feature: draft and published records, dnd-kit field
       reordering, live preview through `FormBuilder`, unsaved-changes
-      warning via `useBlocker`
+      warning via `useBlocker`. No longer waiting on the Zod decision
 
 ## Priority 1 — Blocking real usage
 
@@ -274,31 +314,29 @@ data? }`. Login returns `token` and `user` beside `status`, so a login
       workflow.** Both were fully built once (proven working, including a
       real CI failure caught and fixed — see `BUILD_GUIDE.md`'s Phase 5/7
       history) and then intentionally removed mid-build as "overkill for
-      now." Now that routing, a hardened Plop generator suite, and zod
-      validation are in place, the surface area worth testing has grown —
-      this is worth prioritizing before the template sees much more use.
-- [ ] Once tests are back, apply the schema-validation pattern (Priority
-      3.5 below) and its verification test to `orders`/`notifications`/
-      `notes`, not just `todos`.
+      now." Now that routing, a hardened Plop generator suite, and the
+      hand-written form builder validation are in place, the surface area
+      worth testing has grown — this is worth prioritizing before the
+      template sees much more use.
+- [ ] Once tests are back, cover the opt-in runtime checks: a `parse`
+      function passed to `request()` that rejects a malformed mock response,
+      and `validateFormSchema` against malformed descriptions.
 
 ## Priority 3 — Keep mocks honest
 
 - [ ] Once a real backend contract exists (OpenAPI spec or equivalent),
       revisit whether MSW handlers should be generated from it rather than
       hand-maintained, to stop them from silently drifting out of sync
-      with reality (ADR 0003).
+      with reality (ADR 0003). The Bruno collection in the existing system
+      is a candidate source.
 
 ## Priority 3.5 — Hardening (before calling this "foolproof")
 
 **Runtime data safety**
 
-- [x] Add schema validation (zod or valibot) at the `api/` boundary —
-      done for `todos` (types derived via `z.infer`, `.parse()` on both
-      response and mutation input). Verified with a deliberately malformed
-      mock response; error correctly surfaces through the existing
-      `useQuery`/`isError` path. **Follow-up:** apply the same pattern to
-      `orders` and `notifications` once they're built out as real features
-      rather than generator throwaways.
+- [x] ~~Add schema validation (zod or valibot) at the `api/` boundary.~~
+      Superseded by ADR 0012: Zod was removed. Runtime checks are now
+      opt-in per call through the `parse` option of `request()`.
 
 **Security**
 
@@ -366,36 +404,33 @@ data? }`. Login returns `token` and `user` beside `status`, so a login
 The generator brainstorm from this build is fully implemented. Reference
 for what exists, so nobody rebuilds one that's already there:
 
-- `yarn generate:feature` — full feature slice: types (zod-backed), api,
+- `yarn generate:feature` — full feature slice: types (plain interfaces), api,
   hooks, components, page, barrel, route + nav link, with prompts for an
   optional Zustand store and optional create/update/delete mutations
 - `yarn generate:route` — add routing to an already-existing, unrouted
   feature
 - `yarn generate:hook` — add one new mutation hook to an already-existing
-  feature (requires the `// plop:mutation` anchor in that feature's
-  `api.ts` — only present on features generated after this was added;
-  `todos`/`orders`/`notifications` would need it added by hand)
+  feature (requires the `// plop:mutation` and `// plop:handler` anchors in
+  that feature's API and handlers files, and refuses to run without them)
 - `yarn generate:adr` — new numbered ADR, auto-incrementing from
   `docs/adr/`'s existing files
 - `yarn generate:component` — one component, in either an existing
   feature or `shared/ui`
+- `yarn generate:web-app <name>` (repo root) — a new frontend from this
+  template, with template-only content stripped
+
+All generators run correctly from any folder, including the repo root.
 
 ## Documentation debt
 
-- [ ] **ADR filenames need cleanup.** `0001-0004` were hand-created from
-      downloaded files and ended up with spaces instead of dashes (e.g.
-      `0001 feature sliced architecture.md`), and `0002` picked up a wrong
-      filename along the way (content may still be correct — verify before
-      renaming). A new `0005` ADR (routing + ESLint boundary enforcement,
-      content already drafted in this conversation) also needs renaming
-      from `0001-...` to `0005-...` since it was generated before `0001-0004`
-      were actually present on disk. Rename all five to consistent
-      `NNNN-kebab-case-with-dashes.md`, update `0005`'s internal heading
-      number, and add its row to `docs/adr/README.md`'s index. Deliberately
-      paused mid-fix — pick back up when convenient.
+- [x] **ADR filenames need cleanup.** Verified from the repo listing during
+      the monorepo move: every ADR file is named `NNNN-kebab-case.md`. What
+      remains (0008's slug, a possible 0011 and 0005 duplicate, the index)
+      is tracked under Cleanup above.
 - [ ] Worth a new ADR (or two) covering the routing/boundary-enforcement
       decision and the generator suite as a whole — use `yarn generate:adr`
-      now that it exists, rather than creating the file by hand.
+      now that it exists, rather than creating the file by hand. Check
+      0005, 0008 and 0011 first, since they may already cover this.
 - [ ] `docs/BUILD_GUIDE.md`'s decision log is current as of this session;
       its phase checkboxes for Phase 5/7 (testing, CI) were deliberately
       reverted to unchecked to match the removal — don't re-check them

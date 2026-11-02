@@ -12,8 +12,10 @@ import { configureApi } from '@/shared/lib'
  *   failure the server reports inside a 2xx response
  * - extractError: read a message from an error response body
  * - onUnauthorized and onForbidden: react to a 401 or 403 in one place
+ * template-only:start
  *
  * A complete worked example is in docs/examples/existing-system-adapter.ts.
+ * template-only:end
  */
 export function setupApi(): void {
   configureApi({

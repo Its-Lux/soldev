@@ -1,7 +1,11 @@
 # 0010. Form builder
 
-Status: Proposed
+Status: Superseded by [0012](./0012-remove-zod-in-favour-of-plain-typescript.md)
 Date: 2026-10-05
+
+> The structure below (two levels of validation, a field registry, TanStack
+> Form) still stands. What changed is how validation is done: Zod was removed,
+> and both levels are now hand-written. See ADR 0012.
 
 ## Context
 

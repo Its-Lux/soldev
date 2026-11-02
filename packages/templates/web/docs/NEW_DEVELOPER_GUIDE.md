@@ -3,6 +3,10 @@
 This app uses a feature-sliced architecture. Almost everything you need to
 understand or change lives inside one folder under `src/features/<name>/`.
 
+It is one workspace in a Yarn 4 monorepo. Shared tooling (the base TypeScript
+and ESLint settings, Prettier and the git hooks) lives at the repo root;
+everything specific to this app lives in this folder.
+
 ## 1. Mental model
 
 ```
@@ -46,6 +50,7 @@ services / api / store`. Data flows down, never sideways between features.
 | Compose a full screen                      | `pages/`                                             |
 | Add a route                                | `app/router/routes/`                                 |
 | Define a domain type                       | `types/`, as a plain interface                       |
+| Mock an endpoint                           | the feature's `api/<name>Api.handlers.ts`            |
 
 Before adding anything to `shared/`, ask whether two unrelated features would
 need it unchanged. If not, it belongs in the feature.
@@ -62,6 +67,18 @@ Do not copy folders by hand.
 | `yarn generate:component` | Add one component to a feature or to `shared/ui`                                                                                             |
 | `yarn generate:adr`       | Record an architectural decision                                                                                                             |
 
+Run them from this folder, or from the repo root with
+`yarn workspace <package name> generate:feature`. They behave the same from
+anywhere.
+
+<!-- template-only:start -->
+
+At the repo root, `yarn generate:web-app <name>` creates a new frontend from
+this template. Content listed in `template.json`, or wrapped in the
+template-only marker comments, exists only in the template and is removed
+from generated apps.
+<!-- template-only:end -->
+
 Generators write files once. Changing a template does not fix files that were
 already generated, so apply template fixes to existing files by hand.
 
@@ -72,7 +89,7 @@ the generator stops before changing anything and names the file. That matters
 because Plop's `modify` otherwise reports success and does nothing. It also
 assumes the names the feature generator produces, a type named after the feature
 and a mock array called `items`, so use it on generated features. On a
-hand-written feature such as `sites`, add the mutation by hand.
+hand-written feature, add the mutation by hand.
 
 ## 4. Server state and client state
 
@@ -130,11 +147,17 @@ exactly. `router.ts` needs `// plop:route-import` and `// plop:route-child`.
 `Layout.tsx` needs `// plop:nav-icon-import` and `// plop:nav-link`, plus one
 `// plop:nav-group:<slug>` for each dropdown group.
 
-## 8. Feature boundaries
+## 8. Feature boundaries and linting
 
 ESLint enforces that a feature cannot import another feature's internals.
-`yarn lint` fails if you try. If the rule ever seems silent, the cause is
-usually module resolution, so check the boundaries settings in
+`yarn lint` fails if you try, and so does the commit hook, which runs ESLint
+and Prettier on staged files.
+
+The shared rules come from `eslint.config.base.js` at the repo root. This
+package's `eslint.config.js` adds React and the boundary rules, with their paths
+anchored to this folder, so lint gives the same result whether it starts here,
+at the repo root or in the commit hook. If the rule ever seems silent, the cause
+is usually module resolution, so check the boundaries settings in
 `eslint.config.js` first.
 
 ## 9. The API client, authentication and access
@@ -169,13 +192,19 @@ triggers work, such as an import, must never be a query, because queries
 refetch on window focus and reconnect.
 
 **Adapting it to a backend.** One file, `src/app/api/setupApi.ts`, calls
-`configureApi`. It has five optional hooks: `prepareRequest` (where a token
+`configureApi`, and `main.tsx` calls `setupApi()` once at startup, before any
+request can run. It has five optional hooks: `prepareRequest` (where a token
 goes: a header, the body, or cookies via `credentials`), `unwrapResponse`
 (reading data out of an envelope, or throwing an `ApiError` for a failure sent
 inside a 2xx response), `extractError`, `onUnauthorized` and `onForbidden`. The
-defaults are bare JSON and no auth. `docs/examples/existing-system-adapter.ts`
-is a complete worked example for one real backend. It is not compiled by
-`yarn typecheck`, so check it still builds before relying on it.
+defaults are bare JSON and no auth.
+
+<!-- template-only:start -->
+
+`docs/examples/existing-system-adapter.ts` is a complete worked example for one
+real backend. It is not compiled by `yarn typecheck`, so check it still builds
+before relying on it.
+<!-- template-only:end -->
 
 **Where the session lives.** That is a project decision. One rule always
 applies: a token and its expiry are client state, but the user's profile and
@@ -198,14 +227,19 @@ beforeLoad: () => {
 
 **Mocks.** MSW handlers must listen for the same route and verb the client
 sends, which is a POST to `/<feature>/<action>`, and return exactly what the
-configured backend returns, envelope included. Otherwise the request goes
-unhandled, and in dev it falls through to the network and fails.
+configured backend returns, envelope included. Build handler URLs from
+`env.API_ADDRESS`, the same base `request()` uses, never from a hardcoded
+address: then they match whatever `VITE_API_BASE_URL` holds, including blank.
+A handler that does not match lets the request fall through to the network,
+where in development it fails with only a console warning.
 
 ## 10. Environment variables
 
-Vite exposes only variables prefixed `VITE_`. Copy `.env.example` to `.env`.
-`.env` is never committed. `VITE_*` values are baked in at build time, so a
-Docker image cannot be repointed at another API without a rebuild.
+Vite exposes only variables prefixed `VITE_`. Copy `.env.example` to `.env` to
+set values. `.env` is never committed. In development it is optional: with a
+blank `VITE_API_BASE_URL`, requests and mock handlers both use the page's own
+address. `VITE_*` values are baked in at build time, so a Docker image cannot
+be repointed at another API without a rebuild.
 
 `VITE_ENABLE_MOCKS` switches the mock layer on. Development always mocks. A
 production build mocks only when built with `VITE_ENABLE_MOCKS=true`, which is
@@ -229,39 +263,53 @@ that, build with `yarn build --mode staging` and read `env.ENV_MODE`.
 
 ## 11. Docker
 
+Images are built from the repo root, with this app's Dockerfile in
+`hosting/docker/<app>/`. From the repo root:
+
 ```bash
-yarn docker:build
-yarn docker:run
+yarn docker:<app>:build    # build the image
+yarn docker:<app>:verify   # build, run and check it
 ```
 
-`.env` is not copied into the image, so the API address and the mock switch are
-passed as build arguments:
+<!-- template-only:start -->
+
+For the template itself, use `yarn docker:template:build`,
+`yarn docker:template:run` and `yarn docker:template:verify`.
+<!-- template-only:end -->
+
+`.env` is not copied into the image, so `VITE_*` values are passed as build
+arguments:
 
 ```bash
 # production: calls a real API, no mock layer
-docker build --build-arg VITE_API_BASE_URL=https://api.example.com/api -t soldev-ui .
+docker build -f hosting/docker/<app>/Dockerfile \
+  --build-arg VITE_API_BASE_URL=https://api.example.com/api -t <image> .
 
 # demo: runs on mock data with no backend, tagged separately so it cannot be
 # mistaken for production
-docker build --build-arg VITE_API_BASE_URL=http://localhost:3000/api \
-  --build-arg VITE_ENABLE_MOCKS=true -t soldev-ui-demo .
+docker build -f hosting/docker/<app>/Dockerfile \
+  --build-arg VITE_ENABLE_MOCKS=true -t <image>-demo .
 ```
 
-The demo address must match the one the mock handlers listen on. A production
-image built without `VITE_API_BASE_URL` has no API address, so a container
-failing to load data is expected there, not a fault in the image. Check an image
-with `bash scripts/verify-docker.sh`, or `DEMO=1 bash scripts/verify-docker.sh`
-for a demo image.
+A demo image needs no API address, because the mock handlers build on the same
+base as `request()`. A production image built without `VITE_API_BASE_URL` has
+no API address, so a container failing to load data is expected there, not a
+fault in the image. The verify script checks production images, so it reports
+a demo image's mock layer as a failure.
 
 ## 12. Running things
 
 ```bash
+yarn install      # once, from the repo root
 yarn dev          # development server with mock data
 yarn build        # type-check and production build
 yarn lint         # ESLint
 yarn typecheck    # tsc --noEmit
 yarn format       # Prettier
 ```
+
+From the repo root, the same commands exist as `yarn run:<app>`,
+`yarn build:<app>`, `yarn lint:<app>` and `yarn typecheck:<app>`.
 
 ## 13. Testing status
 
@@ -278,12 +326,20 @@ earlier, then removed, and their return is deferred. Verify changes with
 - Adding a route inside a feature rather than in `app/router/`
 - Retyping a `// plop:` anchor comment instead of copying it exactly
 - Calling `fetch` directly in a feature instead of using `request()`
+- Giving a mock handler its own hardcoded address instead of `env.API_ADDRESS`
+- Editing the root's shared config for one app's needs; override in this
+  package's own config instead
 - Skipping the generator and hand-rolling a feature folder
 
 ## 15. Where to look when lost
 
-Start with `docs/BUILD_GUIDE.md`, which records how the project was built and
-why. For one specific decision, check `docs/adr/`. For what is still open,
-see `docs/NEXT_STEPS_CHECKLIST.md`. In development, the in-app guide walks
-through the template with code read live from the project, and shows this file
-as its developer guide chapters.
+For one specific decision, check `docs/adr/`. Decisions about the whole repo,
+such as the monorepo layout, are in the root `docs/adr/`.
+
+<!-- template-only:start -->
+
+For how the template was built and why, start with `docs/BUILD_GUIDE.md`. For
+what is still open, see `docs/NEXT_STEPS_CHECKLIST.md`. In development, the
+in-app guide walks through the template with code read live from the project,
+and shows this file as its developer guide chapters.
+<!-- template-only:end -->

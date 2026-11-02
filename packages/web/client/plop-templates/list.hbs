@@ -1,0 +1,19 @@
+import type { {{pascalCase name}} } from '../types'
+
+interface {{pascalCase name}}ListProps {
+  items: {{pascalCase name}}[]
+}
+
+export function {{pascalCase name}}List({ items }: {{pascalCase name}}ListProps) {
+  if (items.length === 0) {
+    return <p className="text-gray-400">No {{name}} yet.</p>
+  }
+
+  return (
+    <ul>
+      {items.map((item) => (
+        <li key={item.id}>{item.id}</li>
+      ))}
+    </ul>
+  )
+}

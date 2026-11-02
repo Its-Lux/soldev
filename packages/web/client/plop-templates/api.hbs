@@ -1,0 +1,24 @@
+import { request } from '@/shared/lib'
+import type { {{pascalCase name}} } from '../types'
+
+const route = (action: string) => `/{{name}}/${action}`
+
+export const {{camelCase name}}Api = {
+  getAll: (): Promise<{{pascalCase name}}[]> =>
+    request<{{pascalCase name}}[]>({ path: route('getAll') }),
+{{#if (includes mutations "create")}}
+
+  create: (input: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}> =>
+    request<{{pascalCase name}}>({ path: route('create'), body: input }),
+{{/if}}
+{{#if (includes mutations "update")}}
+
+  update: (id: string, input: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}> =>
+    request<{{pascalCase name}}>({ path: route('update'), body: { ...input, id } }),
+{{/if}}
+{{#if (includes mutations "delete")}}
+
+  delete: (id: string): Promise<void> => request({ path: route('delete'), body: { id } }),
+{{/if}}
+  // plop:mutation
+}

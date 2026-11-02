@@ -1,0 +1,10 @@
+{
+  "$comment": "Read by scripts/generate-web-app.ts, never at runtime. Paths listed here exist only in the template and are deleted from generated apps, as are lines between template-only:start and template-only:end comments. This file is deleted too.",
+  "templateOnly": [
+    "src/features/guide",
+    "src/app/router/routes/guideRoute.ts",
+    "docs/BUILD_GUIDE.md",
+    "docs/NEXT_STEPS_CHECKLIST.md",
+    "docs/examples"
+  ]
+}

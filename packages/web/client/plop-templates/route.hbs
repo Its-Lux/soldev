@@ -1,0 +1,9 @@
+import { createRoute } from '@tanstack/react-router'
+import { rootRoute } from './rootRoute'
+import { {{pascalCase name}}Page } from '@/features/{{name}}'
+
+export const {{camelCase name}}Route = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/{{name}}',
+  component: {{pascalCase name}}Page,
+})

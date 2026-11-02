@@ -1,0 +1,11 @@
+# Store and check out text files with LF on every machine,
+# regardless of each developer's core.autocrlf setting.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Vendored Yarn files are never converted or diffed.
+/.yarn/releases/** binary
+/.yarn/plugins/** binary

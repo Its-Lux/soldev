@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw'
+import { env } from '@/shared/config'
 import type { CreateTodoInput, Todo, TodoDetail } from '../types'
 
 let records: TodoDetail[] = [
@@ -20,10 +21,8 @@ let records: TodoDetail[] = [
   },
 ]
 
-const BASE_URL = 'http://localhost:3000/api/todos'
+const BASE_URL = `${env.API_ADDRESS}/todos`
 
-// The list route returns only what a list needs. The detail route returns the
-// whole record, so the list-then-detail split is visible in the network tab.
 const toSummary = ({ id, title, completed, createdAt }: TodoDetail): Todo => ({
   id,
   title,

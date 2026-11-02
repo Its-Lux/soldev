@@ -83,7 +83,7 @@ export const generatorsChapter: Chapter = {
     },
     {
       kind: 'note',
-      body: 'Three lessons from building this template. The hook generator assumes the names the feature generator produces, a type named after the feature and a mock array called `items`, so it suits generated features, not hand-written ones. A page reached from inside a feature, such as a detail page, needs the "No nav link" option when its route is generated. And `handlers.hbs` hardcodes `http://localhost:3000/api/{{name}}` while `request()` reads `VITE_API_BASE_URL`, so if the two ever differ, mocks stop intercepting without any error.',
+      body: 'Three lessons from building this template. The hook generator assumes the names the feature generator produces, a type named after the feature and a mock array called `items`, so it suits generated features, not hand-written ones. A page reached from inside a feature, such as a detail page, needs the "No nav link" option when its route is generated. And mock handlers must build their URLs from `env.API_ADDRESS`, the same base `request()` uses: a handler with its own hardcoded address stops matching the moment `VITE_API_BASE_URL` differs, and MSW lets the request through without any error. `handlers.hbs` and the `todos` handlers both follow this rule.',
     },
     {
       kind: 'text',

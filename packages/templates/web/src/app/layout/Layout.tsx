@@ -3,7 +3,10 @@ import { Footer, ThemeToggle } from '@/shared/ui'
 import { ResponsiveNavbar, type MobileNavVariant } from '@/shared/ui/layout'
 import { useFullBleed } from '@/app/router/useFullBleed'
 // plop:nav-icon-import
-import { FaHome, FaBook } from 'react-icons/fa'
+import { FaHome } from 'react-icons/fa'
+// template-only:start
+import { FaBook } from 'react-icons/fa'
+// template-only:end
 
 // 'drawer' = hamburger and slide-in menu, 'bottom' = fixed bottom bar
 const mobileVariant: MobileNavVariant = 'bottom'
@@ -21,9 +24,11 @@ export function Layout() {
     { label: 'Home', href: '/todos', icon: FaHome, isActive: pathname === '/todos' },
     // NOTE: Do not remove the following line. It is used by plop to add new navigation links.
     // plop:nav-link
+    // template-only:start
     ...(import.meta.env.DEV
       ? [{ label: 'Guide', href: '/guide', icon: FaBook, isActive: pathname === '/guide' }]
       : []),
+    // template-only:end
   ]
 
   // Full-bleed pages fill the window exactly and run under the floating

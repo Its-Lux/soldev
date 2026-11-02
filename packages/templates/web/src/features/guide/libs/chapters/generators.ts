@@ -55,7 +55,7 @@ export const generatorsChapter: Chapter = {
     },
     {
       kind: 'snippet',
-      path: '/src/app/router/routes/todosRoute.ts',
+      path: '/src/app/router/routes/todoDetailRoute.ts',
       caption: 'The todo detail route, written by hand',
     },
     {
@@ -83,7 +83,7 @@ export const generatorsChapter: Chapter = {
     },
     {
       kind: 'note',
-      body: 'Three lessons from building this template. The hook generator assumes the names the feature generator produces, a type named after the feature and a mock array called `items`, so it suits generated features, not hand-written ones such as `sites`. A page reached from inside a feature, such as a detail page, needs the "No nav link" option when its route is generated. And `handlers.hbs` hardcodes `http://localhost:3000/api/{{name}}` while `request()` reads `VITE_API_BASE_URL`, so if the two ever differ, mocks stop intercepting without any error.',
+      body: 'Three lessons from building this template. The hook generator assumes the names the feature generator produces, a type named after the feature and a mock array called `items`, so it suits generated features, not hand-written ones. A page reached from inside a feature, such as a detail page, needs the "No nav link" option when its route is generated. And `handlers.hbs` hardcodes `http://localhost:3000/api/{{name}}` while `request()` reads `VITE_API_BASE_URL`, so if the two ever differ, mocks stop intercepting without any error.',
     },
     {
       kind: 'text',

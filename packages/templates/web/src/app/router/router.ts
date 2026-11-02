@@ -5,7 +5,9 @@ import { indexRoute } from './routes/indexRoute'
 // plop:route-import
 import { todosRoute } from './routes/todosRoute'
 import { todoDetailRoute } from './routes/todoDetailRoute'
+// template-only:start
 import { guideRoute } from './routes/guideRoute'
+// template-only:end
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -13,7 +15,9 @@ const routeTree = rootRoute.addChildren([
   // plop:route-child
   todosRoute,
   todoDetailRoute,
+  // template-only:start
   ...(import.meta.env.DEV ? [guideRoute] : []),
+  // template-only:end
 ])
 
 export const router = createRouter({ routeTree })

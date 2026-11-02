@@ -1,4 +1,4 @@
-# 0001. Routing with TanStack Router and ESLint-Enforced Feature Boundaries
+# 0005. Routing with TanStack Router and ESLint-Enforced Feature Boundaries
 
 Status: Proposed
 Date: 2026-09-11

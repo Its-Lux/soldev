@@ -1,4 +1,4 @@
-# 0008. Body generator suite
+# 0008. Generator suite
 
 Status: Proposed
 Date: 2026-10-05

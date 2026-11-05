@@ -1,20 +1,4 @@
-// Plain TypeScript types. They exist at compile time only: nothing checks at
+// The todos contract is shared with the API through @libs/types, so the two
+// cannot drift apart. These are compile-time types only: nothing checks at
 // runtime that the server actually sends these shapes.
-
-// The summary: what a list needs, and nothing more.
-export interface Todo {
-  id: string
-  title: string
-  completed: boolean
-  createdAt: string
-}
-
-// The detail: the summary plus fields only a single-record view needs.
-export interface TodoDetail extends Todo {
-  description: string
-  updatedAt: string
-}
-
-export interface CreateTodoInput {
-  title: string
-}
+export type { CreateTodoRequest as CreateTodoInput, Todo, TodoDetail } from '@libs/types'

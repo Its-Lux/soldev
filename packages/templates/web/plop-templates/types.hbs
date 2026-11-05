@@ -1,3 +1,12 @@
+{{#if sharedContract}}
+// The {{name}} contract is shared with the API through @libs/types
+// (packages/libs/types/src/{{name}}/{{name}}.types.ts), so the two cannot drift
+// apart. It is a compile-time type only: nothing checks it at runtime.
+export type { {{pascalCase name}} } from '@libs/types'
+{{else}}
+// A compile-time type only: nothing checks at runtime that the server sends
+// this shape, so keep it in step with the real API.
 export interface {{pascalCase name}} {
   id: string
 }
+{{/if}}

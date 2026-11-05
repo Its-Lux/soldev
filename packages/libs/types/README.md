@@ -23,6 +23,20 @@ Shared API contract types for the frontends and the API.
 
 ## Adding a domain
 
-1. Create `src/<prefix>/<prefix>.types.ts`.
-2. Add `export type * from './<prefix>/<prefix>.types.js'` to `src/index.ts`.
+**Generated (the default).** `yarn generate:feature` in a frontend creates
+`src/<feature>/<feature>.types.ts` with a Request/Response pair for `getAll`
+and each selected mutation, and registers it below `// plop:contract-export`
+in `src/index.ts`. `yarn generate:hook` adds later mutations below the
+contract file's `// plop:contract-mutation` anchor. Keep both anchors: the
+generators refuse to run without them. Generated contracts start minimal
+(`id` only), so fill in the real fields and agree them with the API owners in
+review.
+
+**By hand.**
+
+1. Create `src/<prefix>/<prefix>.types.ts`. Add a
+   `// plop:contract-mutation` line if the hook generator should be able to
+   extend it.
+2. Add `export type * from './<prefix>/<prefix>.types.js'` to `src/index.ts`,
+   above or below the anchor.
 3. Run `yarn typecheck:types` from the repo root.

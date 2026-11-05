@@ -511,6 +511,14 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@libs/types@workspace:packages/libs/types":
+  version: 0.0.0-use.local
+  resolution: "@libs/types@workspace:packages/libs/types"
+  dependencies:
+    typescript: "npm:~6.0.2"
+  languageName: unknown
+  linkType: soft
+
 "@mswjs/interceptors@npm:^0.41.3":
   version: 0.41.9
   resolution: "@mswjs/interceptors@npm:0.41.9"
@@ -1541,9 +1549,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@web/client@workspace:packages/web/client":
+"@web/admin@workspace:packages/web/admin":
   version: 0.0.0-use.local
-  resolution: "@web/client@workspace:packages/web/client"
+  resolution: "@web/admin@workspace:packages/web/admin"
   dependencies:
     "@tailwindcss/vite": "npm:^4.3.3"
     "@tanstack/react-form": "npm:^1.33.5"

@@ -1,0 +1,11 @@
+import { create } from 'zustand'
+
+interface {{pascalCase name}}UiState {
+  searchQuery: string
+  setSearchQuery: (query: string) => void
+}
+
+export const use{{pascalCase name}}UiStore = create<{{pascalCase name}}UiState>((set) => ({
+  searchQuery: '',
+  setSearchQuery: (searchQuery) => set({ searchQuery }),
+}))

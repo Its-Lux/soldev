@@ -26,7 +26,13 @@
     "docker:template:build": "docker build -f hosting/docker/_web-template/Dockerfile --build-arg APP_DIR=packages/templates/web --build-arg APP_NAME=@templates/web -t soldev-web-template .",
     "docker:template:run": "docker run --rm -p 8080:80 soldev-web-template",
     "docker:template:verify": "APP_DIR=packages/templates/web APP_NAME=@templates/web bash hosting/docker/_web-template/verify-docker.sh",
-    "typecheck:types": "yarn workspace @libs/types typecheck"
+    "typecheck:types": "yarn workspace @libs/types typecheck",
+    "run:admin": "yarn workspace @web/admin dev",
+    "build:admin": "yarn workspace @web/admin build",
+    "lint:admin": "yarn workspace @web/admin lint",
+    "typecheck:admin": "yarn workspace @web/admin typecheck",
+    "docker:admin:build": "docker build -f hosting/docker/admin/Dockerfile -t soldev-admin .",
+    "docker:admin:verify": "bash hosting/docker/admin/verify-docker.sh"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

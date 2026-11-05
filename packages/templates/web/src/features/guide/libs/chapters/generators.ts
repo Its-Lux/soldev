@@ -29,12 +29,13 @@ export const generatorsChapter: Chapter = {
     },
     {
       kind: 'text',
-      body: 'The generated data layer starts with a plain TypeScript interface. It exists at compile time only: nothing checks at runtime that the server sends that shape, so keep it in step with the real API.',
+      body: "The data layer starts from the feature's API contract. By default the generator creates it in the shared `@libs/types` package, as `packages/libs/types/src/<name>/<name>.types.ts`, with a Request/Response pair for `getAll` and each ticked mutation, and registers it in that package's index. If the file already exists it is reused, and only missing pairs are added. The feature's own `types/` file then re-exports the type, so imports inside the feature stay local. Answer no to the contract question only for a feature with no API; it gets a plain local interface instead.",
     },
+    { kind: 'snippet', path: '/plop-templates/contract.hbs', caption: 'contract.hbs' },
     { kind: 'snippet', path: '/plop-templates/types.hbs', caption: 'types.hbs' },
     {
       kind: 'text',
-      body: 'The API template calls `request()` from `@/shared/lib`, never `fetch`. Every route is a POST named for its action, such as `/<name>/getAll`, and the type argument on `request<T>()` tells TypeScript what comes back. A call that must be checked at runtime passes a `parse` function instead, for example `parseFormSchema` from the form builder. A server error becomes a thrown `ApiError`, which TanStack Query surfaces as `isError`.',
+      body: "The API template calls `request()` from `@/shared/lib`, never `fetch`. Every route is a POST named for its action, such as `/<name>/getAll`. With a shared contract, the file imports it once as `import type * as Contract from '@libs/types'`, the type argument on `request<T>()` names the Response type, and `satisfies` checks each body against its Request type, so a body that drifts from the contract fails the typecheck. The namespace import means the hook generator can add methods later without editing imports. None of this is checked at runtime: a call that must be checked passes a `parse` function, for example `parseFormSchema` from the form builder. A server error becomes a thrown `ApiError`, which TanStack Query surfaces as `isError`.",
     },
     { kind: 'snippet', path: '/plop-templates/api.hbs', caption: 'api.hbs' },
     {
@@ -60,7 +61,7 @@ export const generatorsChapter: Chapter = {
     },
     {
       kind: 'text',
-      body: 'Generators can also edit existing files. They find their place through anchor comments: the new route is appended after `// plop:route-child` in `router.ts`, and the nav link after `// plop:nav-link` in `Layout.tsx`. Retype an anchor even slightly and the append silently does nothing.',
+      body: 'Generators can also edit existing files. They find their place through anchor comments: the new route is appended after `// plop:route-child` in `router.ts`, and the nav link after `// plop:nav-link` in `Layout.tsx`. Shared contracts use two more: `// plop:contract-export` in `@libs/types/src/index.ts`, and `// plop:contract-mutation` in each contract file. Retype an anchor even slightly and an append silently does nothing, which is why the contract steps check their anchors before writing anything.',
     },
     {
       kind: 'snippet',
@@ -72,7 +73,7 @@ export const generatorsChapter: Chapter = {
     { kind: 'snippet', path: '/plop-templates/navLink.hbs', caption: 'navLink.hbs' },
     {
       kind: 'text',
-      body: "`yarn generate:hook` adds one mutation to an existing feature. It patches two files, the feature's `api.ts` and its mock handlers, through `// plop:mutation` and `// plop:handler`. If either anchor is missing it stops before changing anything, because Plop's `modify` would otherwise report success and do nothing.",
+      body: "`yarn generate:hook` adds one mutation to an existing feature. It patches the feature's `api.ts` and its mock handlers through `// plop:mutation` and `// plop:handler`, and, for a feature typed from a shared contract, appends the mutation's Request/Response pair to the contract file as well. If any anchor it needs is missing it stops before changing anything, because Plop's `modify` would otherwise report success and do nothing.",
     },
     {
       kind: 'snippet',

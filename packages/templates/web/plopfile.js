@@ -8,6 +8,58 @@ export default function (plop) {
   const fromHere = (...parts) => path.join(plop.getPlopfilePath(), ...parts)
   const pascalCase = plop.getHelper('pascalCase')
 
+  // Shared contracts live in @libs/types. Apps and the template sit at the same
+  // depth (packages/<group>/<name>), so this relative path works from either.
+  const LIBS_TYPES = '../../libs/types'
+  const CONTRACT_INDEX = `${LIBS_TYPES}/src/index.ts`
+  const CONTRACT_EXPORT_ANCHOR = '// plop:contract-export'
+  const CONTRACT_MUTATION_ANCHOR = '// plop:contract-mutation'
+  const contractPathFor = (name) => `${LIBS_TYPES}/src/${name}/${name}.types.ts`
+  const readIfExists = (relativePath) =>
+    fs.existsSync(fromHere(relativePath)) ? fs.readFileSync(fromHere(relativePath), 'utf-8') : null
+
+  /**
+   * Problems that would stop a shared contract from working, checked before
+   * any file is written: the package must depend on @libs/types, the contract
+   * index must carry its anchor, and an existing contract file must carry its
+   * mutation anchor when mutations are to be added to it.
+   */
+  const contractSetupProblems = (name, addsMutations) => {
+    const problems = []
+    const manifest = JSON.parse(fs.readFileSync(fromHere('package.json'), 'utf-8'))
+    const deps = { ...manifest.dependencies, ...manifest.devDependencies }
+    if (!deps['@libs/types']) {
+      problems.push(
+        'this package does not depend on @libs/types (add "@libs/types": "workspace:*" to devDependencies)',
+      )
+    }
+    const index = readIfExists(CONTRACT_INDEX)
+    if (index === null || !index.includes(CONTRACT_EXPORT_ANCHOR)) {
+      problems.push(`${CONTRACT_INDEX} (needs "${CONTRACT_EXPORT_ANCHOR}")`)
+    }
+    const contract = readIfExists(contractPathFor(name))
+    if (addsMutations && contract !== null && !contract.includes(CONTRACT_MUTATION_ANCHOR)) {
+      problems.push(`${contractPathFor(name)} (needs "${CONTRACT_MUTATION_ANCHOR}")`)
+    }
+    return problems
+  }
+
+  /**
+   * Appends one mutation's Request/Response pair to a feature's contract file,
+   * unless the contract already has that action (a reused contract).
+   */
+  const contractMutationAction = (mutationName) => ({
+    type: 'append',
+    path: `${LIBS_TYPES}/src/{{name}}/{{name}}.types.ts`,
+    pattern: CONTRACT_MUTATION_ANCHOR,
+    templateFile: 'plop-templates/contractMutation.hbs',
+    data: { mutationName },
+    skip: (data) =>
+      readIfExists(contractPathFor(data.name))?.includes(`// POST /${data.name}/${mutationName}`)
+        ? `Skipped: ${mutationName} is already in the contract`
+        : undefined,
+  })
+
   plop.setHelper('includes', (array, value) => array.includes(value))
   plop.setHelper('eq', (a, b) => a === b)
 
@@ -138,6 +190,42 @@ export default function (plop) {
     return actions
   }
 
+  /**
+   * Creates the feature's contract in @libs/types (or reuses an existing one),
+   * registers it in the package index, and adds a Request/Response pair for
+   * each selected mutation. Throws before anything is written if the setup is
+   * incomplete.
+   */
+  const buildContractActions = (answers) => {
+    const problems = contractSetupProblems(answers.name, answers.mutations.length > 0)
+    if (problems.length > 0) {
+      throw new Error(
+        `Nothing was changed. Shared contract not possible: ${problems.join('; ')}. Fix it, or answer "no" to the shared contract question.`,
+      )
+    }
+    return [
+      {
+        type: 'add',
+        path: `${LIBS_TYPES}/src/{{name}}/{{name}}.types.ts`,
+        templateFile: 'plop-templates/contract.hbs',
+        skipIfExists: true,
+      },
+      {
+        type: 'append',
+        path: CONTRACT_INDEX,
+        pattern: CONTRACT_EXPORT_ANCHOR,
+        templateFile: 'plop-templates/contractExport.hbs',
+        skip: (data) =>
+          readIfExists(CONTRACT_INDEX)?.includes(`'./${data.name}/${data.name}.types.js'`)
+            ? 'Skipped: the contract is already registered'
+            : undefined,
+      },
+      // Each append lands directly below the anchor, so add them in reverse
+      // to keep the contract in create, update, delete order.
+      ...[...answers.mutations].reverse().map(contractMutationAction),
+    ]
+  }
+
   // Generator for creating a new feature slice
   plop.setGenerator('feature', {
     description: 'Scaffold a new feature slice',
@@ -159,9 +247,17 @@ export default function (plop) {
         message: 'Which mutations does this feature need?',
         choices: ['create', 'update', 'delete'],
       },
+      {
+        type: 'confirm',
+        name: 'sharedContract',
+        message:
+          'Create (or reuse) the shared API contract in @libs/types? Say no only if this feature has no API.',
+        default: true,
+      },
       ...navLinkPrompts,
     ],
     actions: (answers) => [
+      ...(answers.sharedContract ? buildContractActions(answers) : []),
       {
         type: 'add',
         path: 'src/features/{{name}}/types/{{name}}.ts',
@@ -358,7 +454,6 @@ export default function (plop) {
       },
     ],
     actions: (answers) => {
-      // Same helper as the add action below, so the check and the file always agree.
       const hookPath = `src/features/${answers.name}/hooks/use${pascalCase(answers.mutationName)}${pascalCase(answers.name)}.ts`
       if (fs.existsSync(fromHere(hookPath))) {
         throw new Error(`${hookPath} already exists.`)
@@ -369,18 +464,24 @@ export default function (plop) {
       const apiAnchor = /  \/\/ plop:mutation\r?\n}/
       const handlersAnchor = /  \/\/ plop:handler\r?\n\]/
       const missing = []
-      if (
-        !fs.existsSync(fromHere(apiPath)) ||
-        !apiAnchor.test(fs.readFileSync(fromHere(apiPath), 'utf-8'))
-      ) {
+      const apiText = readIfExists(apiPath)
+      if (apiText === null || !apiAnchor.test(apiText)) {
         missing.push(`${apiPath} (needs "  // plop:mutation" before its closing brace)`)
       }
-      if (
-        !fs.existsSync(fromHere(handlersPath)) ||
-        !handlersAnchor.test(fs.readFileSync(fromHere(handlersPath), 'utf-8'))
-      ) {
+      const handlersText = readIfExists(handlersPath)
+      if (handlersText === null || !handlersAnchor.test(handlersText)) {
         missing.push(`${handlersPath} (needs "  // plop:handler" before its closing bracket)`)
       }
+
+      answers.sharedContract = apiText !== null && apiText.includes("from '@libs/types'")
+      if (answers.sharedContract) {
+        const contractPath = contractPathFor(answers.name)
+        const contract = readIfExists(contractPath)
+        if (contract === null || !contract.includes(CONTRACT_MUTATION_ANCHOR)) {
+          missing.push(`${contractPath} (needs "${CONTRACT_MUTATION_ANCHOR}")`)
+        }
+      }
+
       if (missing.length > 0) {
         throw new Error(`Nothing was changed. Missing anchor in: ${missing.join('; ')}.`)
       }
@@ -403,6 +504,7 @@ export default function (plop) {
           pattern: handlersAnchor,
           templateFile: 'plop-templates/hookHandler.hbs',
         },
+        ...(answers.sharedContract ? [contractMutationAction(answers.mutationName)] : []),
       ]
     },
   })

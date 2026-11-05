@@ -1,3 +1,48 @@
+{{#if sharedContract}}
+import type * as Contract from '@libs/types'
+import { request } from '@/shared/lib'
+
+// Every route is a POST named for its action, for example /{{name}}/getAll.
+const route = (action: string) => `/{{name}}/${action}`
+
+// Request and response types come from the shared contract in @libs/types.
+// `satisfies` checks each body against it; the type argument on request<T>()
+// says what comes back. Neither is checked at runtime.
+export const {{camelCase name}}Api = {
+  getAll: (): Promise<Contract.GetAll{{pascalCase name}}Response> =>
+    request<Contract.GetAll{{pascalCase name}}Response>({
+      path: route('getAll'),
+      body: {} satisfies Contract.GetAll{{pascalCase name}}Request,
+    }),
+{{#if (includes mutations "create")}}
+
+  create: (
+    input: Contract.Create{{pascalCase name}}Request,
+  ): Promise<Contract.Create{{pascalCase name}}Response> =>
+    request<Contract.Create{{pascalCase name}}Response>({ path: route('create'), body: input }),
+{{/if}}
+{{#if (includes mutations "update")}}
+
+  update: (
+    id: string,
+    input: Partial<Contract.{{pascalCase name}}>,
+  ): Promise<Contract.Update{{pascalCase name}}Response> =>
+    request<Contract.Update{{pascalCase name}}Response>({
+      path: route('update'),
+      body: { ...input, id } satisfies Contract.Update{{pascalCase name}}Request,
+    }),
+{{/if}}
+{{#if (includes mutations "delete")}}
+
+  delete: (id: string): Promise<Contract.Delete{{pascalCase name}}Response> =>
+    request<Contract.Delete{{pascalCase name}}Response>({
+      path: route('delete'),
+      body: { id } satisfies Contract.Delete{{pascalCase name}}Request,
+    }),
+{{/if}}
+  // plop:mutation
+}
+{{else}}
 import { request } from '@/shared/lib'
 import type { {{pascalCase name}} } from '../types'
 
@@ -22,3 +67,4 @@ export const {{camelCase name}}Api = {
 {{/if}}
   // plop:mutation
 }
+{{/if}}

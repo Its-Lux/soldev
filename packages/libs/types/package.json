@@ -1,0 +1,19 @@
+{
+  "name": "@libs/types",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared API contract types for the frontends and the API. Types only, no runtime code.",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2"
+  }
+}

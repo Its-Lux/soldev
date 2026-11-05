@@ -37,20 +37,20 @@ services / api / store`. Data flows down, never sideways between features.
 
 ## 2. Where does my code go?
 
-| I need to...                               | Put it in                                            |
-| ------------------------------------------ | ---------------------------------------------------- |
-| Call an endpoint                           | `api/`, using `request()` from `shared/lib`          |
-| Check a response's shape at runtime        | `api/`, by passing a `parse` function to `request()` |
-| Reshape API data for the UI                | `services/`                                          |
-| Fetch or mutate data in a component        | `hooks/`                                             |
-| Store a filter, toggle or modal state      | `store/`                                             |
-| Store data that came from the server       | Nowhere. TanStack Query already has it               |
-| Build a feature-specific component         | `features/<name>/components/`                        |
-| Build a component two features would share | `shared/ui/<Name>/`                                  |
-| Compose a full screen                      | `pages/`                                             |
-| Add a route                                | `app/router/routes/`                                 |
-| Define a domain type                       | `types/`, as a plain interface                       |
-| Mock an endpoint                           | the feature's `api/<name>Api.handlers.ts`            |
+| I need to...                               | Put it in                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------- |
+| Call an endpoint                           | `api/`, using `request()` from `shared/lib`                         |
+| Check a response's shape at runtime        | `api/`, by passing a `parse` function to `request()`                |
+| Reshape API data for the UI                | `services/`                                                         |
+| Fetch or mutate data in a component        | `hooks/`                                                            |
+| Store a filter, toggle or modal state      | `store/`                                                            |
+| Store data that came from the server       | Nowhere. TanStack Query already has it                              |
+| Build a feature-specific component         | `features/<name>/components/`                                       |
+| Build a component two features would share | `shared/ui/<Name>/`                                                 |
+| Compose a full screen                      | `pages/`                                                            |
+| Add a route                                | `app/router/routes/`                                                |
+| Define a domain type                       | Its contract in `@libs/types`; the feature's `types/` re-exports it |
+| Mock an endpoint                           | the feature's `api/<name>Api.handlers.ts`                           |
 
 Before adding anything to `shared/`, ask whether two unrelated features would
 need it unchanged. If not, it belongs in the feature.
@@ -70,6 +70,19 @@ Do not copy folders by hand.
 Run them from this folder, or from the repo root with
 `yarn workspace <package name> generate:feature`. They behave the same from
 anywhere.
+
+**Shared contracts.** `yarn generate:feature` asks whether to create the
+feature's API contract in `@libs/types` (the default). Saying yes creates
+`packages/libs/types/src/<name>/<name>.types.ts` with a Request/Response pair
+for `getAll` and each mutation you tick, registers it in that package's index,
+and types the feature's `api.ts` from it. If the file already exists, it is
+reused. `yarn generate:hook` adds later mutations to the same contract file.
+Both rely on two anchors in `@libs/types`, `// plop:contract-export` in
+`src/index.ts` and `// plop:contract-mutation` in each contract file, and stop
+before changing anything if either is missing. Generated contracts start with
+`id` only: fill in the real fields and agree them with the API owners in the
+pull request. Say no only for a feature with no API; it then gets a local
+interface instead.
 
 <!-- template-only:start -->
 
@@ -103,10 +116,14 @@ server data into a Zustand store, because two sources of truth drift apart.
 
 ## 5. Types and validation
 
-Domain types are plain TypeScript interfaces in a feature's `types/`. They exist
-at compile time only. The type argument on `request<T>()` tells TypeScript what
-a response holds, and nothing checks it at runtime, so keep the types in step
-with the real API.
+Domain types come from the feature's API contract in `@libs/types`, shared
+with the API, and the feature's `types/` re-exports them, so imports inside the
+feature stay local (`../types`). A feature without an API keeps a plain
+interface in `types/` instead. Either way, types exist at compile time only.
+The type argument on `request<T>()` tells TypeScript what a response holds,
+and `satisfies` checks each request body against its contract, but nothing
+checks the response at runtime, so keep the contract in step with the real
+API.
 
 When a wrong shape would break something rather than just display oddly, pass a
 `parse` function: `request({ path, parse })`. It receives the response and

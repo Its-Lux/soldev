@@ -1,3 +1,31 @@
+{{#if sharedContract}}
+{{#if (eq mutationName "create")}}
+
+  create: (
+    input: Contract.Create{{pascalCase name}}Request,
+  ): Promise<Contract.Create{{pascalCase name}}Response> =>
+    request<Contract.Create{{pascalCase name}}Response>({ path: route('create'), body: input }),
+{{/if}}
+{{#if (eq mutationName "update")}}
+
+  update: (
+    id: string,
+    input: Partial<Contract.{{pascalCase name}}>,
+  ): Promise<Contract.Update{{pascalCase name}}Response> =>
+    request<Contract.Update{{pascalCase name}}Response>({
+      path: route('update'),
+      body: { ...input, id } satisfies Contract.Update{{pascalCase name}}Request,
+    }),
+{{/if}}
+{{#if (eq mutationName "delete")}}
+
+  delete: (id: string): Promise<Contract.Delete{{pascalCase name}}Response> =>
+    request<Contract.Delete{{pascalCase name}}Response>({
+      path: route('delete'),
+      body: { id } satisfies Contract.Delete{{pascalCase name}}Request,
+    }),
+{{/if}}
+{{else}}
 {{#if (eq mutationName "create")}}
 
   create: (input: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}> =>
@@ -11,6 +39,7 @@
 {{#if (eq mutationName "delete")}}
 
   delete: (id: string): Promise<void> => request({ path: route('delete'), body: { id } }),
+{{/if}}
 {{/if}}
   // plop:mutation
 }

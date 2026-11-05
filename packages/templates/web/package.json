@@ -45,6 +45,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@libs/types": "workspace:*",
     "@tanstack/react-query-devtools": "^5.102.0",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",

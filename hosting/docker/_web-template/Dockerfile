@@ -1,5 +1,5 @@
 # Build from the repo root, so the image can see the root lockfile, the
-# vendored Yarn and the shared tsconfig:
+# vendored Yarn, the shared tsconfig and shared libraries:
 #
 #   docker build -f hosting/docker/<app>/Dockerfile -t <image> .
 #
@@ -20,10 +20,14 @@ ENV HUSKY=0
 
 WORKDIR /repo
 
-# 1. Manifests only, so this layer stays cached until dependencies change.
+# 1. Manifests and shared libraries first, so this layer stays cached until
+#    dependencies change. Libraries are copied whole because an app may depend
+#    on any of them (workspace:*), and focus must find each one. They stay in
+#    this build stage only; the final image holds just the built files.
 #    The image's bundled Yarn 1 hands over to the vendored Yarn 4 via yarnPath.
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn/releases ./.yarn/releases
+COPY packages/libs ./packages/libs
 COPY ${APP_DIR}/package.json ./${APP_DIR}/
 RUN yarn workspaces focus ${APP_NAME}
 

@@ -1,0 +1,20 @@
+{{#if (eq mutationName "create")}}
+
+// POST /{{name}}/create
+export type Create{{pascalCase name}}Request = Partial<{{pascalCase name}}>
+export type Create{{pascalCase name}}Response = {{pascalCase name}}
+{{/if}}
+{{#if (eq mutationName "update")}}
+
+// POST /{{name}}/update
+export type Update{{pascalCase name}}Request = Partial<{{pascalCase name}}> & { id: string }
+export type Update{{pascalCase name}}Response = {{pascalCase name}}
+{{/if}}
+{{#if (eq mutationName "delete")}}
+
+// POST /{{name}}/delete (204, no body)
+export interface Delete{{pascalCase name}}Request {
+  id: string
+}
+export type Delete{{pascalCase name}}Response = void
+{{/if}}

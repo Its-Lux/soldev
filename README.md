@@ -14,11 +14,11 @@ soldev/
 └── packages/
     ├── templates/web/        Frontend template (@templates/web), never deployed
     ├── web/
-    │   ├── client/           Customer frontend (@web/client)
+    │   ├── <app>/            Frontends generated from the template (@web/<app>)
     │   └── api/              API (@web/api), coming
     └── libs/
-        ├── data/             Data layer (@libs/data), coming
-        └── types/            Shared API contract types (@libs/types), planned
+        ├── types/            Shared API contract types (@libs/types)
+        └── data/             Data layer (@libs/data), coming
 ```
 
 | Area                     | Owner    | Notes                                                  |
@@ -46,22 +46,26 @@ soldev/
 git clone <repo-url> soldev
 cd soldev
 yarn install
-yarn run:client
+yarn run:template
 ```
 
-`yarn install` also installs the git hooks. In development the frontends run
-on mock data (MSW), so no backend and no `.env` file are needed: with a blank
-`VITE_API_BASE_URL`, requests and mock handlers share the page's own address.
-To set real values, copy a package's `.env.example` to `.env`; it is never
-committed.
+`yarn install` also installs the git hooks. `yarn run:template` starts the
+template, which is the quickest way to see the frontend architecture; to work
+on a real frontend, generate one (see Frontends below).
+
+In development, frontends run on mock data (MSW), so no backend and no `.env`
+file are needed: with a blank `VITE_API_BASE_URL`, requests and mock handlers
+share the page's own address. To set real values, copy a package's
+`.env.example` to `.env`; it is never committed.
 
 ## Common commands
 
-Run from the repo root.
+Run from the repo root. `<app>` is `template` or the name of a generated
+frontend.
 
 | Command                        | What it does                                        |
 | ------------------------------ | --------------------------------------------------- |
-| `yarn run:<app>`               | Start an app's dev server (`client`, `template`)    |
+| `yarn run:<app>`               | Start an app's dev server                           |
 | `yarn build:<app>`             | Type-check and build an app                         |
 | `yarn lint:<app>`              | Lint an app, including the feature boundary rules   |
 | `yarn typecheck:<app>`         | Type-check an app                                   |
@@ -69,30 +73,32 @@ Run from the repo root.
 | `yarn docker:<app>:verify`     | Build, run and check an app's image                 |
 | `yarn generate:web-app <name>` | Create a new frontend from the template             |
 | `yarn remove:web-app <name>`   | Remove a generated frontend (asks for confirmation) |
+| `yarn typecheck:types`         | Type-check the shared contract types                |
 | `yarn typecheck:scripts`       | Type-check the repo tooling in `scripts/`           |
 
 Any package script can also be run with `yarn workspace <package> <script>`,
-for example `yarn workspace @web/client generate:feature`.
+for example `yarn workspace @templates/web generate:feature`.
 
 ## Frontends
 
 New frontends are generated, never copied by hand:
 
 ```bash
-yarn generate:web-app admin --port 5175
+yarn generate:web-app client --port 5174
 yarn install
+yarn run:client
 ```
 
-This copies `packages/templates/web` to `packages/web/admin` (`@web/admin`),
+This copies `packages/templates/web` to `packages/web/client` (`@web/client`),
 strips template-only content (the in-app guide, the template's build history
-and examples), creates `hosting/docker/admin/` and adds `run:admin`,
-`build:admin` and the other root scripts. If any code still refers to
+and examples), creates `hosting/docker/client/` and adds `run:client`,
+`build:client` and the other root scripts. If any code still refers to
 something it stripped, it stops and rolls everything back.
 
 To remove one:
 
 ```bash
-yarn remove:web-app admin
+yarn remove:web-app client
 yarn install
 ```
 
@@ -104,7 +110,16 @@ asks you to type the name to confirm.
 the template afterwards must be applied to existing apps by hand, so make
 architectural changes in the template first, then carry them across.
 
-Each frontend's own guide is in `packages/web/<app>/docs/NEW_DEVELOPER_GUIDE.md`.
+Each frontend's own guide is in `packages/web/<app>/docs/NEW_DEVELOPER_GUIDE.md`
+(the template's is in `packages/templates/web/docs/`).
+
+## Shared contract types
+
+`packages/libs/types` (`@libs/types`) holds the request and response types
+shared by the frontends and the API: one file per route prefix, one
+Request/Response pair per action. It contains types only, so it adds nothing
+to any bundle. Frontends list it as `"@libs/types": "workspace:*"` and import
+it with `import type`. Its README has the rules.
 
 ## Shared tooling
 
@@ -126,12 +141,13 @@ Change shared settings only with agreement from both frontend and backend.
 ## Docker
 
 Every image is built with the repo root as context, so it can see the
-lockfile, the vendored Yarn and shared packages. Each deployable has its
+lockfile, the vendored Yarn and shared libraries. Each deployable has its
 Dockerfile in `hosting/docker/<app>/`:
 
 ```bash
-yarn docker:client:build
-yarn docker:client:verify
+yarn docker:template:verify
+yarn docker:<app>:build
+yarn docker:<app>:verify
 ```
 
 `VITE_*` values are baked in at build time and passed as build arguments
@@ -144,8 +160,8 @@ address. See the frontend developer guide for production and demo builds.
 - **Package scopes follow the folder:** `@templates/*`, `@web/*`, `@libs/*`.
 - **API calls are POSTs to `/<prefix>/<action>`** (for example
   `/todos/getAll`) with flat JSON bodies, `{}` when there are no parameters.
-- **Shared contract types live in `@libs/types`** (planned): types only,
-  JSON-safe, never database entities.
+- **Shared contract types live in `@libs/types`:** types only, JSON-safe,
+  never database entities.
 - **No Zod.** Types are plain TypeScript; runtime checks are opt-in per call
   (see ADR 0012 in the template).
 - **British English** in documentation and user-facing text.
@@ -158,12 +174,13 @@ address. See the frontend developer guide for production and demo builds.
 | `packages/templates/web/docs/adr/`                    | Frontend decisions (also copied into each app)  |
 | `packages/templates/web/docs/BUILD_GUIDE.md`          | How the template was built, with a decision log |
 | `packages/templates/web/docs/NEXT_STEPS_CHECKLIST.md` | What is open                                    |
-| `packages/web/<app>/docs/NEW_DEVELOPER_GUIDE.md`      | Working on a frontend                           |
+| `packages/templates/web/docs/NEW_DEVELOPER_GUIDE.md`  | Working on a frontend                           |
+| `packages/libs/types/README.md`                       | Rules for the shared contract types             |
 
 ## Current status
 
-- The frontends run on mock data; the API and data packages are not in this
-  repository yet.
+- No frontend is generated yet; the template runs on mock data. The API and
+  data packages are not in this repository yet.
 - There is no automated test suite or CI pipeline. Verify changes with the
   `typecheck`, `lint` and `build` commands; the commit hook enforces lint and
   formatting.

@@ -20,7 +20,7 @@ shaped like soltrak-rewrite. Done and verified:
       `lint-staged` block (closest config wins)
 - [x] Docker built from the repo root: one Dockerfile in
       `hosting/docker/_web-template` with `__APP__` tokens, `yarn workspaces
-  focus`, mock worker removed when mocks are off. 10 of 10 verify checks
+focus`, mock worker removed when mocks are off. 10 of 10 verify checks
       for both template and client, 20 MB images
 - [x] `sites` removed; `guide` and the template docs marked template-only
       (`template.json` plus `template-only:start`/`end` markers)
@@ -51,8 +51,12 @@ Opened by the restructure:
       into that app by hand (the plopfile was the first case). Consider
       shared packages before a second frontend exists: `packages/libs/ui`
       (Tailwind v4 needs an `@source` line for it) and shared generators
-- [ ] `@libs/types`: shared, types-only request and response contracts for
-      the frontend and the API
+- [x] `@libs/types`: shared, types-only request and response contracts, used by
+      the template's `todos` feature and included in Docker images
+- [x] Generators are contract-first: `generate:feature` creates the feature's
+      contract in `@libs/types`, and `generate:hook` extends it
+- [ ] Agree with the API owners how generated contracts are reviewed, and
+      whether the API side generates contracts too or only consumes them
 - [ ] Conventions to agree with the colleague who owns `libs/data` and
       `web/api`: toolchain versions, scopes, Prettier and ESLint, the API
       contract, line endings
@@ -91,7 +95,7 @@ where they overlap. Work through it in order, confirming each step.
       script confirms MSW and `mockServiceWorker.js` are absent from the
       production image
 - [ ] Remaining from the mock-layer fix: add `readonly VITE_ENABLE_MOCKS?:
-  string` to `vite-env.d.ts` if missing, document the flag in
+string` to `vite-env.d.ts` if missing, document the flag in
       `.env.example`, and optionally add demo build scripts
 - [ ] `env` module: replace `shared/config/env.ts` (the owner's existing one)
       and `shared/lib/api/config.ts`, so the API client's default address
